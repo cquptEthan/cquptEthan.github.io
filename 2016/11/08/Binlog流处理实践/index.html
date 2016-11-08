@@ -84,12 +84,22 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="机场等船的人">
-<meta property="og:url" content="https://cquptethan.github.io/index.html">
+<meta name="description" content="简介本文主要介绍如何使用Storm处理Binlog日志，满足实时数据查询需求。
+最初需要实现数据分析师对部分表实时查询的功能。 Binlog 用作同步实时数据到 HBase 中，用于 Hive 外表对这张实时表进行查询分析。技术层面只涉及到单表同步，只需要解析Binlog事件转化为 HBase 的 Put/Delete 操作即可。
+随发展，业务方提出了实时性很高的数据需求，这些慢SQL使用MySQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Binlog流处理实践">
+<meta property="og:url" content="https://cquptethan.github.io/2016/11/08/Binlog流处理实践/index.html">
 <meta property="og:site_name" content="机场等船的人">
+<meta property="og:description" content="简介本文主要介绍如何使用Storm处理Binlog日志，满足实时数据查询需求。
+最初需要实现数据分析师对部分表实时查询的功能。 Binlog 用作同步实时数据到 HBase 中，用于 Hive 外表对这张实时表进行查询分析。技术层面只涉及到单表同步，只需要解析Binlog事件转化为 HBase 的 Put/Delete 操作即可。
+随发展，业务方提出了实时性很高的数据需求，这些慢SQL使用MySQ">
+<meta property="og:updated_time" content="2016-11-08T08:58:36.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="机场等船的人">
+<meta name="twitter:title" content="Binlog流处理实践">
+<meta name="twitter:description" content="简介本文主要介绍如何使用Storm处理Binlog日志，满足实时数据查询需求。
+最初需要实现数据分析师对部分表实时查询的功能。 Binlog 用作同步实时数据到 HBase 中，用于 Hive 外表对这张实时表进行查询分析。技术层面只涉及到单表同步，只需要解析Binlog事件转化为 HBase 的 Put/Delete 操作即可。
+随发展，业务方提出了实时性很高的数据需求，这些慢SQL使用MySQ">
 
 
 
@@ -110,10 +120,10 @@
 
 
 
-  <link rel="canonical" href="https://cquptethan.github.io/"/>
+  <link rel="canonical" href="https://cquptethan.github.io/2016/11/08/Binlog流处理实践/"/>
 
 
-  <title> 机场等船的人 </title>
+  <title> Binlog流处理实践 | 机场等船的人 </title>
 </head>
 
 <body itemscope itemtype="//schema.org/WebPage" lang="zh-Hans">
@@ -152,9 +162,7 @@
     
   
 
-  <div class="container one-collumn sidebar-position-left 
-   page-home 
- ">
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="//schema.org/WPHeader">
@@ -233,9 +241,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
   
@@ -255,10 +263,7 @@
             
             
               
-                
-                <a class="post-title-link" href="/2016/11/08/Binlog流处理实践/" itemprop="url">
-                  Binlog流处理实践
-                </a>
+                Binlog流处理实践
               
             
           </h1>
@@ -298,9 +303,7 @@
       
 
       
-        
-          
-            <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>本文主要介绍如何使用Storm处理Binlog日志，满足实时数据查询需求。</p>
+        <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>本文主要介绍如何使用Storm处理Binlog日志，满足实时数据查询需求。</p>
 <p>最初需要实现数据分析师对部分表<strong>实时查询</strong>的功能。 <strong>Binlog</strong> 用作同步实时数据到 <strong>HBase</strong> 中，用于 <strong>Hive</strong> 外表对这张实时表进行查询分析。技术层面只涉及到<strong>单表同步</strong>，只需要解析Binlog事件转化为 <strong>HBase</strong> 的 <strong>Put</strong>/<strong>Delete </strong>操作即可。</p>
 <p>随发展，业务方提出了实时性很高的数据需求，这些慢SQL使用MySQL查询数分钟，无法满足实时性的要求。</p>
 <p>所以我们通过 <strong>对 Binlog 日志进行实时分析，计算数据指标落地到 HBase ，给业务方提供实时查询服务</strong>。 技术上需要处理复杂的SQL的<strong>实时多表关联</strong>、<strong>结果集存储设计</strong>以及<strong>快速查询</strong>。</p>
@@ -397,16 +400,20 @@
 <hr>
 <h1 id="流处理"><a href="#流处理" class="headerlink" title="流处理"></a>流处理</h1><hr>
 <h1 id="接口实现"><a href="#接口实现" class="headerlink" title="接口实现"></a>接口实现</h1>
-          
+      
+    </div>
+
+    <div>
+      
         
+
       
     </div>
 
     <div>
       
-    </div>
+        
 
-    <div>
       
     </div>
 
@@ -414,131 +421,32 @@
       
 
       
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-
-
-    
-      
-
-  
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal " itemscope itemtype="//schema.org/Article">
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
             
+              <a href="/2016/11/01/写一点东西/" rel="next" title="写一点东西">
+                <i class="fa fa-chevron-left"></i> 写一点东西
+              </a>
             
-              
-                
-                <a class="post-title-link" href="/2016/11/01/写一点东西/" itemprop="url">
-                  写一点东西
-                </a>
-              
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
             
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            <span class="post-meta-item-icon">
-              <i class="fa fa-calendar-o"></i>
-            </span>
-            <span class="post-meta-item-text">发表于</span>
-            <time itemprop="dateCreated" datetime="2016-11-01T10:44:10+08:00" content="2016-11-01">
-              2016-11-01
-            </time>
-          </span>
-
-          
-            <span class="post-category" >
-              &nbsp; | &nbsp;
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="https://schema.org/Thing">
-                  <a href="/categories/随笔/" itemprop="url" rel="index">
-                    <span itemprop="name">随笔</span>
-                  </a>
-                </span>
-
-                
-                
-
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-
-          
-          
-
-          
+          </div>
         </div>
-      </header>
-    
-
-
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
       
-        
-          
-            
-          
-        
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <div>
-      
-    </div>
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
       
     </footer>
   </article>
 
 
-    
-  </section>
 
-  
+    <div class="post-spread">
+      
+    </div>
+  </div>
 
 
           </div>
@@ -546,6 +454,10 @@
 
 
           
+  <div class="comments" id="comments">
+    
+  </div>
+
 
         </div>
         
@@ -565,8 +477,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel  sidebar-panel-active ">
+      <section class="site-overview sidebar-panel ">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="//schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/uploads/avatar.jpeg"
@@ -627,6 +548,17 @@
 
       </section>
 
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#简介"><span class="nav-number">1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Binlog"><span class="nav-number">2.</span> <span class="nav-text">Binlog</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#格式"><span class="nav-number">2.1.</span> <span class="nav-text">格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拉取"><span class="nav-number">2.2.</span> <span class="nav-text">拉取</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Binlog权限"><span class="nav-number">2.2.1.</span> <span class="nav-text">Binlog权限</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Binlog偏移量"><span class="nav-number">2.2.2.</span> <span class="nav-text">Binlog偏移量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#获取Binlog数据流"><span class="nav-number">2.2.3.</span> <span class="nav-text">获取Binlog数据流</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解析"><span class="nav-number">2.3.</span> <span class="nav-text">解析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#流处理"><span class="nav-number">3.</span> <span class="nav-text">流处理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#接口实现"><span class="nav-number">4.</span> <span class="nav-text">接口实现</span></a></li></ol></div>
+            
+          </div>
+        </section>
       
 
     </div>
@@ -723,6 +655,10 @@
   
 
   
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.0.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.0.2"></script>
+
+
 
   
 
