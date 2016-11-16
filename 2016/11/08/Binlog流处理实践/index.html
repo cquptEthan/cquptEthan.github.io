@@ -94,14 +94,14 @@
 <meta property="og:description" content="简介本文主要介绍如何使用Storm处理Binlog日志，满足实时数据查询需求。
 最初需要实现数据分析师对部分表实时查询的功能。 Binlog 用作同步实时数据到 HBase 中，用于 Hive 外表对这张实时表进行查询分析。技术层面只涉及到单表同步，只需要解析Binlog事件转化为 HBase 的 Put/Delete 操作即可。
 随发展，业务方提出了实时性很高的数据需求，这些慢SQL使用MySQ">
-<meta property="og:image" content="https://cquptethan.github.io/Binlog流处理实践/img/4274ab64-b6d2-380b-86b2-56afa0de523d.png">
-<meta property="og:updated_time" content="2016-11-16T10:35:40.000Z">
+<meta property="og:image" content="https://cquptethan.github.io/Binlog流处理实践/4274ab64-b6d2-380b-86b2-56afa0de523d.png">
+<meta property="og:updated_time" content="2016-11-16T10:38:14.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Binlog流处理实践">
 <meta name="twitter:description" content="简介本文主要介绍如何使用Storm处理Binlog日志，满足实时数据查询需求。
 最初需要实现数据分析师对部分表实时查询的功能。 Binlog 用作同步实时数据到 HBase 中，用于 Hive 外表对这张实时表进行查询分析。技术层面只涉及到单表同步，只需要解析Binlog事件转化为 HBase 的 Put/Delete 操作即可。
 随发展，业务方提出了实时性很高的数据需求，这些慢SQL使用MySQ">
-<meta name="twitter:image" content="https://cquptethan.github.io/Binlog流处理实践/img/4274ab64-b6d2-380b-86b2-56afa0de523d.png">
+<meta name="twitter:image" content="https://cquptethan.github.io/Binlog流处理实践/4274ab64-b6d2-380b-86b2-56afa0de523d.png">
 
 
 
@@ -407,7 +407,7 @@
 <p>open-replicator是一个Java编写的高性能MySQL Binlog解析器。它封装了上一节中描述的Binlog协议，<strong>实时拉取解析</strong>Binlog，以<strong>回调</strong>的方式发送Binlog事件给应用。</p>
 <p>结合Storm框架，我们只使用open-replicator中解析Binlog为Event的功能，并且只处理Row格式的Binlog。Event的由<code>Bolt</code>处理后续逻辑。</p>
 <p> open-replicator对Binlog Event解析结构图如下：</p>
-<p><img src="Binlog流处理实践/img/4274ab64-b6d2-380b-86b2-56afa0de523d.png" alt="4274ab64-b6d2-380b-86b2-56afa0de523d"></p>
+<p><img src="Binlog流处理实践/4274ab64-b6d2-380b-86b2-56afa0de523d.png" alt="4274ab64-b6d2-380b-86b2-56afa0de523d"></p>
 <p>Binlog Event Parser将Binlog会被解析成各种事件，这些事件分为4类。</p>
 <h3 id="Binlog管理事件"><a href="#Binlog管理事件" class="headerlink" title="Binlog管理事件"></a>Binlog管理事件</h3><ul>
 <li><a href="http://dev.mysql.com/doc/internals/en/start-event-v3.html" target="_blank" rel="external">START_EVENT_V3</a></li>
