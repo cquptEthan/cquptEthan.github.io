@@ -402,7 +402,7 @@
 <p>open-replicator是一个Java编写的高性能MySQL Binlog解析器。它封装了上一节中描述的Binlog协议，<strong>实时拉取解析</strong>Binlog，以<strong>回调</strong>的方式发送Binlog事件给应用。</p>
 <p>结合Storm框架，我们只使用open-replicator中解析Binlog为Event的功能，并且只处理Row格式的Binlog。Event的由<code>Bolt</code>处理后续逻辑。</p>
 <p> open-replicator对Binlog Event解析结构图如下：</p>
-<p><img src="img/4274ab64-b6d2-380b-86b2-56afa0de523d.png" alt="4274ab64-b6d2-380b-86b2-56afa0de523d"></p>
+<p><img src="Binlog流处理实践/img/4274ab64-b6d2-380b-86b2-56afa0de523d.png" alt="4274ab64-b6d2-380b-86b2-56afa0de523d"></p>
 <p>Binlog Event Parser将Binlog会被解析成各种事件，这些事件分为4类。</p>
 <h3 id="Binlog管理事件"><a href="#Binlog管理事件" class="headerlink" title="Binlog管理事件"></a>Binlog管理事件</h3><ul>
 <li><a href="http://dev.mysql.com/doc/internals/en/start-event-v3.html" target="_blank" rel="external">START_EVENT_V3</a></li>
