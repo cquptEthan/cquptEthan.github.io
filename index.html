@@ -393,10 +393,164 @@
 <p>通过<code>show binary logs;</code>查看选择开始的Binlog文件和偏移量，在客户端中无法查看到Binlog文件的更新时间，特定时间的Binlog需要通过MySQL服务端获取。</p>
 <p>COM_BINLOG_DUMP发送成功后，就可以读取返回的Binlog流了。</p>
 <h2 id="解析"><a href="#解析" class="headerlink" title="解析"></a>解析</h2><p>Binlog返回的二进制流，需要解析。</p>
-<p>解析Binlog的组件有<a href="https://github.com/alibaba/canal" target="_blank" rel="external">alibaba/<em>canal</em></a> 和<a href="https://github.com/whitesock/open-replicator" target="_blank" rel="external">whitesock/<em>open-replicator</em></a>。</p>
+<p>根据 <a href="http://dev.mysql.com/doc/internals/en/binlog-event.html" target="_blank" rel="external">Binlog Event</a> 中的包定义，读取二进制流进行解析。</p>
+<p>解析Binlog的常用组件有<a href="https://github.com/alibaba/canal" target="_blank" rel="external">alibaba/<em>canal</em></a> 和<a href="https://github.com/whitesock/open-replicator" target="_blank" rel="external">whitesock/<em>open-replicator</em></a>。</p>
+<p>本文使用open-replicator来处理。</p>
 <hr>
 <h1 id="流处理"><a href="#流处理" class="headerlink" title="流处理"></a>流处理</h1><hr>
-<h1 id="接口实现"><a href="#接口实现" class="headerlink" title="接口实现"></a>接口实现</h1>
+<h2 id="Binlog-数据源"><a href="#Binlog-数据源" class="headerlink" title="Binlog 数据源"></a>Binlog 数据源</h2><p>用open-replicator的代码作为Spout的解析。</p>
+<p> <img src="img/4274ab64-b6d2-380b-86b2-56afa0de523d.png" alt="4274ab64-b6d2-380b-86b2-56afa0de523d"></p>
+<p>Binlog Event Parser将Binlog会被解析成各种事件，这些事件分为4类。</p>
+<h5 id="1-Binlog管理事件"><a href="#1-Binlog管理事件" class="headerlink" title="1.Binlog管理事件"></a>1.Binlog管理事件</h5><ul>
+<li><a href="http://dev.mysql.com/doc/internals/en/start-event-v3.html" target="_blank" rel="external">START_EVENT_V3</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/format-description-event.html" target="_blank" rel="external">FORMAT_DESCRIPTION_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/stop-event.html" target="_blank" rel="external">STOP_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rotate-event.html" target="_blank" rel="external">ROTATE_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/ignored-events.html#slave-event" target="_blank" rel="external">SLAVE_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/incident-event.html" target="_blank" rel="external">INCIDENT_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/heartbeat-event.html" target="_blank" rel="external">HEARTBEAT_EVENT</a></li>
+</ul>
+<h5 id="2-Statement格式同步事件"><a href="#2-Statement格式同步事件" class="headerlink" title="2.Statement格式同步事件"></a>2.Statement格式同步事件</h5><ul>
+<li><a href="http://dev.mysql.com/doc/internals/en/query-event.html" target="_blank" rel="external">QUERY_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/intvar-event.html" target="_blank" rel="external">INTVAR_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rand-event.html" target="_blank" rel="external">RAND_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/user-var-event.html" target="_blank" rel="external">USER_VAR_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/xid-event.html" target="_blank" rel="external">XID_EVENT</a></li>
+</ul>
+<h5 id="3-Row格式同步事件"><a href="#3-Row格式同步事件" class="headerlink" title="3.Row格式同步事件"></a>3.Row格式同步事件</h5><ul>
+<li><a href="http://dev.mysql.com/doc/internals/en/table-map-event.html" target="_blank" rel="external">TABLE_MAP_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#delete-rows-eventv0" target="_blank" rel="external">DELETE_ROWS_EVENTv0</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#update-rows-eventv0" target="_blank" rel="external">UPDATE_ROWS_EVENTv0</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#write-rows-eventv0" target="_blank" rel="external">WRITE_ROWS_EVENTv0</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#delete-rows-eventv1" target="_blank" rel="external">DELETE_ROWS_EVENTv1</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#update-rows-eventv1" target="_blank" rel="external">UPDATE_ROWS_EVENTv1</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#write-rows-eventv1" target="_blank" rel="external">WRITE_ROWS_EVENTv1</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#delete-rows-eventv2" target="_blank" rel="external">DELETE_ROWS_EVENTv2</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#update-rows-eventv2" target="_blank" rel="external">UPDATE_ROWS_EVENTv2</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#write-rows-eventv2" target="_blank" rel="external">WRITE_ROWS_EVENTv2</a></li>
+</ul>
+<h5 id="4-加载文件同步事件"><a href="#4-加载文件同步事件" class="headerlink" title="4.加载文件同步事件"></a>4.加载文件同步事件</h5><ul>
+<li><a href="http://dev.mysql.com/doc/internals/en/load-event.html" target="_blank" rel="external">LOAD_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/create-file-event.html" target="_blank" rel="external">CREATE_FILE_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/append-block-event.html" target="_blank" rel="external">APPEND_BLOCK_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/exec-load-event.html" target="_blank" rel="external">EXEC_LOAD_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/delete-file-event.html" target="_blank" rel="external">DELETE_FILE_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/new-load-event.html" target="_blank" rel="external">NEW_LOAD_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/begin-load-query-event.html" target="_blank" rel="external">BEGIN_LOAD_QUERY_EVENT</a></li>
+<li><a href="http://dev.mysql.com/doc/internals/en/execute-load-query-event.html" target="_blank" rel="external">EXECUTE_LOAD_QUERY_EVENT</a></li>
+</ul>
+<p>事件对应的编号在MySQL源码的<a href="https://github.com/mysql/mysql-server/blob/5.6/sql/log_event.h" target="_blank" rel="external">log_event.h</a>中定义。</p>
+<p>以上的事件中，处理时我们只关心与<strong>修改数据</strong>相关的事件。</p>
+<table>
+<thead>
+<tr>
+<th>事件</th>
+<th>编号</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TABLE_MAP_EVENT</td>
+<td>19</td>
+<td>映射当前操作的表信息。</td>
+</tr>
+<tr>
+<td>WRITE_ROWS_EVENT</td>
+<td>23</td>
+<td>插入事件</td>
+</tr>
+<tr>
+<td>WRITE_ROWS_EVENT_V2</td>
+<td>30</td>
+<td>插入事件</td>
+</tr>
+<tr>
+<td>UPDATE_ROWS_EVENT</td>
+<td>24</td>
+<td>更新事件</td>
+</tr>
+<tr>
+<td>UPDATE_ROWS_EVENT_V2</td>
+<td>31</td>
+<td>更新事件</td>
+</tr>
+<tr>
+<td>DELETE_ROWS_EVENT</td>
+<td>25</td>
+<td>删除事件</td>
+</tr>
+<tr>
+<td>DELETE_ROWS_EVENT_V2</td>
+<td>32</td>
+<td>删除事件</td>
+</tr>
+<tr>
+<td>ROTATE_EVENT</td>
+<td>4</td>
+<td>翻页事件，翻到下一个Binlog文件。</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>注意</p>
+<p>在MySQL5.6版本后，增改删都使用V2事件。</p>
+</blockquote>
+<p>解析后的增删改事件封装为一个Event对象，Event对象包括了一个Binlog事件包中所有的数据，包括Row格式下的修改的行数据。将封装的Event对象发送到下游由业务Bolt进一步处理。</p>
+<h2 id="Spout实现"><a href="#Spout实现" class="headerlink" title="Spout实现"></a>Spout实现</h2><p>首先确定<code>Spout</code>需要输出的数据，如下：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DataBase</td>
+<td>数据库</td>
+</tr>
+<tr>
+<td>Table</td>
+<td>表</td>
+</tr>
+<tr>
+<td>Event</td>
+<td>事件</td>
+</tr>
+</tbody>
+</table>
+<p>我们的想法是将open-replicator中读取MySQL Binlog流解析为Event的代码抽取出来，并且去掉回调的模块，放在Spout的nextTuple()中。</p>
+<p>这里直接使用open-replicator中的<code>BinlogReplicationEntrance</code>类实例化具体的数据库对象，通过这个对象获取Binlog流。获取Binlog流后，在nextTuple()方法中，每次读取一个包并发送解析后的<strong>数据库</strong>、<strong>表</strong>和<strong>事件</strong>信息。</p>
+<h3 id="包的结构"><a href="#包的结构" class="headerlink" title="包的结构"></a>包的结构</h3><h4 id="TABLE-MAP-EVENT"><a href="#TABLE-MAP-EVENT" class="headerlink" title="TABLE_MAP_EVENT"></a>TABLE_MAP_EVENT</h4><p>TABLE_MAP_EVENT封装的Event对象结构如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">long</span> tableId;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> reserved;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> databaseNameLength;</div><div class="line"><span class="keyword">private</span> StringColumn databaseName;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> tableNameLength;</div><div class="line"><span class="keyword">private</span> StringColumn tableName;</div><div class="line"><span class="keyword">private</span> UnsignedLong columnCount;</div><div class="line"><span class="keyword">private</span> <span class="keyword">byte</span>[] columnTypes;</div><div class="line"><span class="keyword">private</span> UnsignedLong columnMetadataCount;</div><div class="line"><span class="keyword">private</span> Metadata columnMetadata;</div><div class="line"><span class="keyword">private</span> BitColumn columnNullabilities;</div></pre></td></tr></table></figure>
+<p>其中需要的字段是tableId，databaseName和tableName。</p>
+<h5 id="tableId"><a href="#tableId" class="headerlink" title="tableId"></a>tableId</h5><p>增删改事件的数据结构中只有通过tableId来确定操作的表，要得到<strong>数据库</strong>、<strong>表</strong>和<strong>事件</strong>的信息需要保留tableId的对应信息。处理此类事件，将tableId和Event对象保存在一个哈希表中。</p>
+<blockquote>
+<p>注意</p>
+<p>同一个表在不同Binlog文件中的tableId是不一样的，处理新的Binlog文件时，老的对应关系要清空。</p>
+</blockquote>
+<h4 id="WRITE-ROWS-EVENT"><a href="#WRITE-ROWS-EVENT" class="headerlink" title="WRITE_ROWS_EVENT"></a>WRITE_ROWS_EVENT</h4><p>WRITE_ROWS_EVENT封装的Event对象结构如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">long</span> tableId;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> reserved;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> extraInfoLength; <span class="comment">//V2版本新增</span></div><div class="line"><span class="keyword">private</span> <span class="keyword">byte</span> extraInfo[];<span class="comment">//V2版本新增</span></div><div class="line"><span class="keyword">private</span> UnsignedLong columnCount;</div><div class="line"><span class="keyword">private</span> BitColumn usedColumns;</div><div class="line"><span class="keyword">private</span> List&lt;Row&gt; rows;</div></pre></td></tr></table></figure>
+<blockquote>
+<p> WRITE_ROWS_EVENT 和 WRITE_ROWS_EVENT_V2两个事件的区别在与有无extra字段。</p>
+</blockquote>
+<p>我们需要用到tableId和rows字段。</p>
+<h5 id="tableId-1"><a href="#tableId-1" class="headerlink" title="tableId"></a>tableId</h5><p>我们需要通过tableId字段，在解析TABLE_MAP_EVENT事件的哈希表中获取表名和数据库名字段。</p>
+<h5 id="rows"><a href="#rows" class="headerlink" title="rows"></a>rows</h5><p>rows包含这次插入事件的所有行，Row对象的数据结构如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> List&lt;Column&gt; columns;</div></pre></td></tr></table></figure>
+<p>一个Row对象就是一行添加的数据，一次插入操作可能会添加多行数据，因此这里用<code>List&lt;Row&gt;</code>来存储。</p>
+<h4 id="DELETE-ROWS-EVENT"><a href="#DELETE-ROWS-EVENT" class="headerlink" title="DELETE_ROWS_EVENT"></a>DELETE_ROWS_EVENT</h4><p>DELETE_ROWS_EVENT封装的Event对象与WRITE_ROWS_EVENT相同，V2版本同样只多了<code>extra</code>字段。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">long</span> tableId;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> reserved;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> extraInfoLength; <span class="comment">//V2版本新增</span></div><div class="line"><span class="keyword">private</span> <span class="keyword">byte</span> extraInfo[];<span class="comment">//V2版本新增</span></div><div class="line"><span class="keyword">private</span> UnsignedLong columnCount;</div><div class="line"><span class="keyword">private</span> BitColumn usedColumns;</div><div class="line"><span class="keyword">private</span> List&lt;Row&gt; rows;</div></pre></td></tr></table></figure>
+<h5 id="rows-1"><a href="#rows-1" class="headerlink" title="rows"></a>rows</h5><p>rows包含这次删除事件影响的所有行。</p>
+<p>一个Row对象就是一行删除的数据，一次删除操作可能会影响多行数据。</p>
+<h4 id="UPDATE-ROWS-EVENT"><a href="#UPDATE-ROWS-EVENT" class="headerlink" title="UPDATE_ROWS_EVENT"></a>UPDATE_ROWS_EVENT</h4><p>UPDATE_ROWS_EVENT封装的Event对象数据结构如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">private</span> <span class="keyword">long</span> tableId;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> reserved;</div><div class="line"><span class="keyword">private</span> <span class="keyword">int</span> extraInfoLength;</div><div class="line"><span class="keyword">private</span> <span class="keyword">byte</span> extraInfo[];</div><div class="line"><span class="keyword">private</span> UnsignedLong columnCount;</div><div class="line"><span class="keyword">private</span> BitColumn usedColumnsBefore;</div><div class="line"><span class="keyword">private</span> BitColumn usedColumnsAfter;</div><div class="line"><span class="keyword">private</span> List&lt;Pair&lt;Row&gt;&gt; rows;</div></pre></td></tr></table></figure>
+<p>跟以上两种事件的区别在与rows字段，类型为<code>List&lt;Pair&lt;Row&gt;&gt;</code>。</p>
+<p>Pair的数据结构如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">Pair</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">Serializable</span></span>&#123;</div><div class="line">	<span class="keyword">private</span> T before;</div><div class="line">	<span class="keyword">private</span> T after;</div></pre></td></tr></table></figure>
+<p>一个<code>Pair&lt;Row&gt;</code>对象中有两行数据，第一个为修改之前的整行数据，第二个为修改之后的整行数据。</p>
+<h3 id="输出"><a href="#输出" class="headerlink" title="输出"></a>输出</h3><h2 id="Bolt处理"><a href="#Bolt处理" class="headerlink" title="Bolt处理"></a>Bolt处理</h2><h2 id="HBase落地"><a href="#HBase落地" class="headerlink" title="HBase落地"></a>HBase落地</h2><h1 id="接口实现"><a href="#接口实现" class="headerlink" title="接口实现"></a>接口实现</h1>
           
         
       
