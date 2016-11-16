@@ -398,10 +398,13 @@
 <p>本文使用open-replicator来处理。</p>
 <hr>
 <h1 id="流处理"><a href="#流处理" class="headerlink" title="流处理"></a>流处理</h1><hr>
-<h2 id="Binlog-数据源"><a href="#Binlog-数据源" class="headerlink" title="Binlog 数据源"></a>Binlog 数据源</h2><p>用open-replicator的代码作为Spout的解析。</p>
-<p> <img src="img/4274ab64-b6d2-380b-86b2-56afa0de523d.png" alt="4274ab64-b6d2-380b-86b2-56afa0de523d"></p>
+<h2 id="Binlog-数据源"><a href="#Binlog-数据源" class="headerlink" title="Binlog 数据源"></a>Binlog 数据源</h2><p>用open-replicator的代码作为<code>Spout</code>的解析Binlog的方法。</p>
+<p>open-replicator是一个Java编写的高性能MySQL Binlog解析器。它封装了上一节中描述的Binlog协议，<strong>实时拉取解析</strong>Binlog，以<strong>回调</strong>的方式发送Binlog事件给应用。</p>
+<p>结合Storm框架，我们只使用open-replicator中解析Binlog为Event的功能，并且只处理Row格式的Binlog。Event的由<code>Bolt</code>处理后续逻辑。</p>
+<p> open-replicator对Binlog Event解析结构图如下：</p>
+<p><img src="img/4274ab64-b6d2-380b-86b2-56afa0de523d.png" alt="4274ab64-b6d2-380b-86b2-56afa0de523d"></p>
 <p>Binlog Event Parser将Binlog会被解析成各种事件，这些事件分为4类。</p>
-<h5 id="1-Binlog管理事件"><a href="#1-Binlog管理事件" class="headerlink" title="1.Binlog管理事件"></a>1.Binlog管理事件</h5><ul>
+<h3 id="Binlog管理事件"><a href="#Binlog管理事件" class="headerlink" title="Binlog管理事件"></a>Binlog管理事件</h3><ul>
 <li><a href="http://dev.mysql.com/doc/internals/en/start-event-v3.html" target="_blank" rel="external">START_EVENT_V3</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/format-description-event.html" target="_blank" rel="external">FORMAT_DESCRIPTION_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/stop-event.html" target="_blank" rel="external">STOP_EVENT</a></li>
@@ -410,14 +413,14 @@
 <li><a href="http://dev.mysql.com/doc/internals/en/incident-event.html" target="_blank" rel="external">INCIDENT_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/heartbeat-event.html" target="_blank" rel="external">HEARTBEAT_EVENT</a></li>
 </ul>
-<h5 id="2-Statement格式同步事件"><a href="#2-Statement格式同步事件" class="headerlink" title="2.Statement格式同步事件"></a>2.Statement格式同步事件</h5><ul>
+<h3 id="Statement格式同步事件"><a href="#Statement格式同步事件" class="headerlink" title="Statement格式同步事件"></a>Statement格式同步事件</h3><ul>
 <li><a href="http://dev.mysql.com/doc/internals/en/query-event.html" target="_blank" rel="external">QUERY_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/intvar-event.html" target="_blank" rel="external">INTVAR_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/rand-event.html" target="_blank" rel="external">RAND_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/user-var-event.html" target="_blank" rel="external">USER_VAR_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/xid-event.html" target="_blank" rel="external">XID_EVENT</a></li>
 </ul>
-<h5 id="3-Row格式同步事件"><a href="#3-Row格式同步事件" class="headerlink" title="3.Row格式同步事件"></a>3.Row格式同步事件</h5><ul>
+<h3 id="Row格式同步事件"><a href="#Row格式同步事件" class="headerlink" title="Row格式同步事件"></a>Row格式同步事件</h3><ul>
 <li><a href="http://dev.mysql.com/doc/internals/en/table-map-event.html" target="_blank" rel="external">TABLE_MAP_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#delete-rows-eventv0" target="_blank" rel="external">DELETE_ROWS_EVENTv0</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#update-rows-eventv0" target="_blank" rel="external">UPDATE_ROWS_EVENTv0</a></li>
@@ -429,7 +432,7 @@
 <li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#update-rows-eventv2" target="_blank" rel="external">UPDATE_ROWS_EVENTv2</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/rows-event.html#write-rows-eventv2" target="_blank" rel="external">WRITE_ROWS_EVENTv2</a></li>
 </ul>
-<h5 id="4-加载文件同步事件"><a href="#4-加载文件同步事件" class="headerlink" title="4.加载文件同步事件"></a>4.加载文件同步事件</h5><ul>
+<h3 id="加载文件同步事件"><a href="#加载文件同步事件" class="headerlink" title="加载文件同步事件"></a>加载文件同步事件</h3><ul>
 <li><a href="http://dev.mysql.com/doc/internals/en/load-event.html" target="_blank" rel="external">LOAD_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/create-file-event.html" target="_blank" rel="external">CREATE_FILE_EVENT</a></li>
 <li><a href="http://dev.mysql.com/doc/internals/en/append-block-event.html" target="_blank" rel="external">APPEND_BLOCK_EVENT</a></li>
